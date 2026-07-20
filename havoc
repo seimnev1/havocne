@@ -1244,15 +1244,7 @@ end
 end
 end
 if CFG.showNPCs then
-local ok,wsKids=pcall(function() return workspace:GetChildren() end)
-if ok and wsKids then
-for _,container in ipairs(wsKids) do
-if not pCharSet[container] and container~=char then
-local cn=container.ClassName
-if cn==string.char(70, 111, 108, 100, 101, 114) or cn==string.char(77, 111, 100, 101, 108) then
-local ok2,kids=pcall(function() return container:GetChildren() end)
-if ok2 and kids then
-for _,child in ipairs(kids) do
+local function tryRegisterNPC(child)
 if child.ClassName==string.char(77, 111, 100, 101, 108) and not pCharSet[child] and not pNameSet[child.Name] and child~=char then
 local hum=child:FindFirstChildOfClass(string.char(72, 117, 109, 97, 110, 111, 105, 100))
 if hum then
@@ -1271,17 +1263,37 @@ hum=hum,isPlayer=false,
 color=selectedColor(CFG.npcColor),_distSq=dSq}
 else
 e.hrp=ph; e.char=child; e._distSq=dSq; e.color=selectedColor(CFG.npcColor)
-if not e.hum or not e.hum.Parent then
-e.hum=hum
+if not e.hum or not e.hum.Parent then e.hum=hum end
 end
 end
 end
 end
 end
 end
+local ok,wsKids=pcall(function() return workspace:GetChildren() end)
+if ok and wsKids then
+for _,container in ipairs(wsKids) do
+if not pCharSet[container] and container~=char then
+local cn=container.ClassName
+if cn==string.char(70, 111, 108, 100, 101, 114) or cn==string.char(77, 111, 100, 101, 108) then
+local ok2,kids=pcall(function() return container:GetChildren() end)
+if ok2 and kids then
+for _,child in ipairs(kids) do
+tryRegisterNPC(child)
 end
 end
 end
+end
+end
+end
+local ok2,objFolder=pcall(function()
+return workspace.Buildings.Loots.Objects
+end)
+if ok2 and objFolder then
+local ok3,kids=pcall(function() return objFolder:GetChildren() end)
+if ok3 and kids then
+for _,child in ipairs(kids) do
+tryRegisterNPC(child)
 end
 end
 end
