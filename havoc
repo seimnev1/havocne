@@ -392,6 +392,57 @@ spread={y={[1]=0,[2]=0,[3]=0},x={[1]=0,[2]=0,[3]=0},z={[1]=0,[2]=0,[3]=0}},
 vel=100000, weight=0, aimWeight=0, unAimWeight=0,
 },
 }
+local STAMINA = {
+enabled  = false,
+loopId   = 0,
+drainCache = nil,
+regenCache = nil,
+}
+local STAMINA_DRAIN_PAYLOAD = {
+staminaDrainPerSecond=0, staminaDrain=0, drainRate=0,
+staminaCost=0, sprintDrain=0, exhaustionRate=0, staminaDecay=0,
+}
+local STAMINA_REGEN_PAYLOAD = {
+staminaRegen=999, regenRate=999, staminaRegenRate=999,
+}
+local function applyStaminaCached()
+if STAMINA.drainCache then
+pcall(applygc, STAMINA.drainCache, STAMINA_DRAIN_PAYLOAD)
+end
+if STAMINA.regenCache then
+pcall(applygc, STAMINA.regenCache, STAMINA_REGEN_PAYLOAD)
+end
+end
+local function startStamina()
+STAMINA.loopId = STAMINA.loopId + 1
+local myId = STAMINA.loopId
+task.spawn(function()
+task.wait(0.1)
+pcall(function()
+STAMINA.drainCache = getgc({
+string.char(115, 116, 97, 109, 105, 110, 97, 68, 114, 97, 105, 110, 80, 101, 114, 83, 101, 99, 111, 110, 100),string.char(115, 116, 97, 109, 105, 110, 97, 68, 114, 97, 105, 110),string.char(100, 114, 97, 105, 110, 82, 97, 116, 101),
+string.char(115, 116, 97, 109, 105, 110, 97, 67, 111, 115, 116),string.char(115, 112, 114, 105, 110, 116, 68, 114, 97, 105, 110),string.char(101, 120, 104, 97, 117, 115, 116, 105, 111, 110, 82, 97, 116, 101),string.char(115, 116, 97, 109, 105, 110, 97, 68, 101, 99, 97, 121),
+})
+end)
+pcall(function()
+STAMINA.regenCache = getgc({
+string.char(115, 116, 97, 109, 105, 110, 97, 82, 101, 103, 101, 110),string.char(114, 101, 103, 101, 110, 82, 97, 116, 101),string.char(115, 116, 97, 109, 105, 110, 97, 82, 101, 103, 101, 110, 82, 97, 116, 101),
+})
+end)
+applyStaminaCached()
+while STAMINA.enabled and STAMINA.loopId == myId do
+task.wait(2)
+if not STAMINA.enabled or STAMINA.loopId ~= myId then break end
+applyStaminaCached()
+end
+end)
+end
+local function stopStamina()
+STAMINA.enabled    = false
+STAMINA.loopId     = STAMINA.loopId + 1
+STAMINA.drainCache = nil
+STAMINA.regenCache = nil
+end
 local INSTANT_LOOT = { enabled=false }
 local IL_GC_KEYS = {
 string.char(115, 101, 97, 114, 99, 104, 95, 115, 112, 101, 101, 100),string.char(115, 101, 97, 114, 99, 104, 83, 112, 101, 101, 100),string.char(83, 101, 97, 114, 99, 104, 83, 112, 101, 101, 100),string.char(115, 101, 97, 114, 99, 104, 84, 105, 109, 101),string.char(83, 101, 97, 114, 99, 104, 84, 105, 109, 101),
@@ -621,6 +672,11 @@ weaponSec:Divider(string.char(76, 111, 111, 116))
 weaponSec:Toggle(string.char(73, 110, 115, 116, 97, 110, 116, 32, 76, 111, 111, 116),false,function(v)
 INSTANT_LOOT.enabled=v
 if v then startInstantLoot() end
+end)
+weaponSec:Divider(string.char(83, 116, 97, 109, 105, 110, 97))
+weaponSec:Toggle(string.char(73, 110, 102, 105, 110, 105, 116, 101, 32, 83, 116, 97, 109, 105, 110, 97),false,function(v)
+STAMINA.enabled=v
+if v then startStamina() else stopStamina() end
 end)
 local entTab  = win:Tab(string.char(69, 110, 116, 105, 116, 121, 32, 69, 83, 80),string.char(117, 115, 101, 114, 115))
 local entSecL = entTab:Section(string.char(84, 97, 114, 103, 101, 116, 115),string.char(76, 101, 102, 116))
